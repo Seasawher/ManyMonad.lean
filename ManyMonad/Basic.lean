@@ -10,24 +10,25 @@ def Many.union : Many α → Many α → Many α
   | Many.none, ys => ys
   | Many.more x xs, ys => Many.more x (fun () => union (xs ()) ys)
 
-def Many.fromList : List α → Many α
-  | [] => Many.none
-  | x :: xs => Many.more x (fun () => fromList xs)
+instance : Append (Many α) where
+  append := Many.union
 
-def Many.take : Nat → Many α → List α
-  | 0, _ => []
-  | _ + 1, Many.none => []
-  | n + 1, Many.more x xs => x :: (xs ()).take n
+/-! Many を eval 可能にする -/
 
 def Many.takeAll : Many α → List α
   | Many.none => []
   | Many.more x xs => x :: (xs ()).takeAll
 
+instance [ToString α] : ToString (Many α) where
+  toString m := toString (Many.takeAll m)
+
+/-! Many を Monad にする -/
+
 def Many.bind : Many α → (α → Many β) → Many β
   | Many.none, _ =>
     Many.none
   | Many.more x xs, f =>
-    (f x).union (bind (xs ()) f)
+    (f x) ++ (bind (xs ()) f)
 
 instance : Monad Many where
   pure := Many.one
